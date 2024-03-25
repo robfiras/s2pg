@@ -30,7 +30,7 @@ class PPO_BPTT_pI(Agent):
     def __init__(self, mdp_info, policy, actor_optimizer, critic_params, hidden_state_dim,
                  n_epochs_policy, batch_size, eps_ppo, lam, dim_env_state, ent_coeff=0.0,
                  policy_state_mask=None, critic_state_mask=None,
-                 critic_fit_params=None, standardizer=None, sw=None, truncation_length=5):
+                 critic_fit_params=None, sw=None, truncation_length=5):
         """
         Constructor.
 
@@ -62,8 +62,6 @@ class PPO_BPTT_pI(Agent):
         self._ent_coeff = to_parameter(ent_coeff)
 
         self._V = Regressor(TorchApproximator, **critic_params)
-
-        self._standardizer = standardizer
 
         self._truncation_length = truncation_length
         self._dim_env_state = dim_env_state
@@ -106,9 +104,10 @@ class PPO_BPTT_pI(Agent):
         del self._save_attributes["_preprocessors"]
 
         # add the standardization preprocessor
-        self._preprocessors.append(StandardizationPreprocessor_ext(mdp_info))
+        self._standardizer = StandardizationPreprocessor_ext(mdp_info)
+        self._preprocessors.append(self._standardizer)
 
-        # add the preprocessor to append the cpg state to the environment state
+        # add the preprocessor to append the hidden state to the environment state
         self._preprocessors.append(self.append_hidden_state)
 
     def divide_state_to_env_hidden_batch(self, states):
@@ -116,19 +115,19 @@ class PPO_BPTT_pI(Agent):
         return states[:, 0:self._dim_env_state], states[:, self._dim_env_state:]
 
     def add_preprocessor(self, preprocessor):
-        # for now disable the preprocessor to ensure that appending the cpg state is always done at last
+        # for now disable the preprocessor to ensure that appending the hidden state is always done at last
         raise AttributeError("This agent current does not support preprocessors.")
 
     def add_hidden_state_preprocessor(self):
-        if len(self._preprocessors) == 0:   # only the cpg preprocessor is allowed for now, which is why we can check the length
+        if len(self._preprocessors) == 0:   # only the hidden state preprocessor is allowed for now, which is why we can check the length
             self._preprocessors.append(self.append_hidden_state)
         else:
             warnings.warn("CPG Preprocessor already included, and will be not added twice.")
 
     def append_hidden_state(self, x):
-        # get latest cpg_state
-        cpg_state = self.policy.get_last_hidden_state()
-        return np.concatenate([x, cpg_state])
+        # get latest hidden state
+        hidden_state = self.policy.get_last_hidden_state()
+        return np.concatenate([x, hidden_state])
 
     def fit(self, dataset, **info):
         x, u, r, xn, absorbing, last = parse_dataset(dataset)
@@ -141,10 +140,6 @@ class PPO_BPTT_pI(Agent):
         obs = to_float_tensor(x_seq, self.policy.use_cuda)
         act = to_float_tensor(u, self.policy.use_cuda)
         prev_act_seq = to_float_tensor(prev_u_seq)
-
-        # update running mean and std
-        if self._standardizer:
-            self._standardizer.update_mean_std(x)
 
         v_target, np_adv = self.compute_gae(self._V, x, xn, r, absorbing, last, self.mdp_info.gamma, self._lambda())
         np_adv = (np_adv - np.mean(np_adv)) / (np.std(np_adv) + 1e-8)
@@ -258,6 +253,9 @@ class PPO_BPTT_pI(Agent):
     def _post_load(self):
         if self._optimizer is not None:
             update_optimizer_parameters(self._optimizer, list(self.policy.parameters()))
+        self._preprocessors = []
+        self._preprocessors.append(self._standardizer)
+        self._preprocessors.append(self.append_hidden_state)
 
     def compute_gae(self, V, s, ss, r, absorbing, last, gamma, lam):
         """

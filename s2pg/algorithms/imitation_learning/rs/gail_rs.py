@@ -25,15 +25,12 @@ class GAIL_RS(PPO):
 
     """
 
-    def __init__(self, discriminator_params,  ppo_standardizer=None, D_standardizer=None,
-                 train_D_n_th_epoch=3, n_epochs_discriminator=1, demonstrations=None, env_reward_frac=0.0,
-                 act_mask=None, use_next_states=False, use_noisy_targets=False, discrim_mode="fully_observable",
-                 discriminator_fit_params=None, loss_params=None, loss_type="logistic_regression", **kwargs):
+    def __init__(self, discriminator_params, train_D_n_th_epoch=3, n_epochs_discriminator=1, demonstrations=None,
+                 env_reward_frac=0.0, act_mask=None, use_next_states=False, use_noisy_targets=False,
+                 discrim_mode="fully_observable", discriminator_fit_params=None, loss_params=None,
+                 loss_type="logistic_regression", **kwargs):
 
         super(GAIL_RS, self).__init__(**kwargs)
-
-        # standardizer
-        self._D_standardizer = D_standardizer
 
         # discriminator params
         self._discriminator_fit_params = (dict() if discriminator_fit_params is None
@@ -94,7 +91,6 @@ class GAIL_RS(PPO):
             _discrim_state_mask='pickle',
             _use_next_state='pickle',
             _use_noisy_targets='pickle',
-            _D_standardizer='pickle',
             _train_D_n_th_epoch='pickle',
             _loss_type='primitive'
         )
@@ -153,10 +149,6 @@ class GAIL_RS(PPO):
         obs = to_float_tensor(x, self.policy.use_cuda)
         act = to_float_tensor(u, self.policy.use_cuda)
 
-        # update running mean and std
-        if self._standardizer:
-            self._standardizer.update_mean_std(obs)
-
         # create reward
         if self._env_reward_frac < 1.0:
 
@@ -164,7 +156,7 @@ class GAIL_RS(PPO):
             r_disc = self.make_discrim_reward(x, u, xn)
             r = r * self._env_reward_frac + r_disc * (1 - self._env_reward_frac)
 
-        v_target, np_adv = self.compute_gae(self._V, x, xn, r, prev_u, absorbing, last, self.mdp_info.gamma, self._lambda())
+        v_target, np_adv = self.compute_gae(self._V, x, xn, r, prev_u, u, absorbing, last, self.mdp_info.gamma, self._lambda())
         np_adv = (np_adv - np.mean(np_adv)) / (np.std(np_adv) + 1e-8)
         adv = to_float_tensor(np_adv, self.policy.use_cuda)
         old_pol_dist = self.policy.distribution_t(torch.unsqueeze(obs_hidden_obs[:, self._policy_state_mask], dim=1),
@@ -215,10 +207,6 @@ class GAIL_RS(PPO):
                 else:
                     input_states = np.concatenate([plcy_obs, demo_obs.astype(np.float32)])
                     inputs = (input_states,)
-
-                # update running mean if neccessary
-                if self._D_standardizer is not None:
-                    self._D_standardizer.update_mean_std(np.concatenate([plcy_obs, demo_obs.astype(np.float32)]))
 
                 # create label targets
                 if self._use_noisy_targets:

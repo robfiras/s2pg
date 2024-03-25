@@ -22,7 +22,7 @@ class PPO(Agent):
     """
     def __init__(self, mdp_info, policy, actor_optimizer, critic_params,
                  n_epochs_policy, batch_size, eps_ppo, lam,  policy_state_mask=None,
-                 ent_coeff=0.0, critic_fit_params=None, standardizer=None, sw=None):
+                 ent_coeff=0.0, critic_fit_params=None, sw=None):
         """
         Constructor.
 
@@ -58,8 +58,6 @@ class PPO(Agent):
         self._policy_state_mask = policy_state_mask if policy_state_mask is not None else\
             np.ones(mdp_info.observation_space.shape[0], dtype=bool)
 
-        self._standardizer = standardizer
-
         if sw:
             self._sw = sw
             setattr(self._sw, '__deepcopy__', lambda self: None) # dont need to be copyable, causes pickle error otherwise
@@ -78,7 +76,6 @@ class PPO(Agent):
             _lambda='mushroom',
             _V='mushroom',
             _iter='primitive',
-            _standardizer='pickle',
             _policy_state_mask='numpy'
         )
 
@@ -93,10 +90,6 @@ class PPO(Agent):
 
         obs = to_float_tensor(x, self.policy.use_cuda)
         act = to_float_tensor(u, self.policy.use_cuda)
-
-        # update running mean and std
-        if self._standardizer:
-            self._standardizer.update_mean_std(x)
 
         v_target, np_adv = compute_gae(self._V, x, xn, r, absorbing, last, self.mdp_info.gamma, self._lambda())
         np_adv = (np_adv - np.mean(np_adv)) / (np.std(np_adv) + 1e-8)

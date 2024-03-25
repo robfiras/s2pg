@@ -94,7 +94,7 @@ class PPO_BPTT(Agent):
         # add the standardization preprocessor
         self._preprocessors.append(StandardizationPreprocessor(mdp_info))
 
-        # add the preprocessor to append the cpg state to the environment state
+        # add the preprocessor to append the hidden state to the environment state
         self._preprocessors.append(self.append_hidden_state)
 
     def divide_state_to_env_hidden_batch(self, states):
@@ -102,19 +102,19 @@ class PPO_BPTT(Agent):
         return states[:, 0:self._dim_env_state], states[:, self._dim_env_state:]
 
     def add_preprocessor(self, preprocessor):
-        # for now disable the preprocessor to ensure that appending the cpg state is always done at last
+        # for now disable the preprocessor to ensure that appending the hidden state is always done at last
         raise AttributeError("This agent current does not support preprocessors.")
 
     def add_hidden_state_preprocessor(self):
-        if len(self._preprocessors) == 0:   # only the cpg preprocessor is allowed for now, which is why we can check the length
+        if len(self._preprocessors) == 0:   # only the hidden state preprocessor is allowed for now, which is why we can check the length
             self._preprocessors.append(self.append_hidden_state)
         else:
-            warnings.warn("CPG Preprocessor already included, and will be not added twice.")
+            warnings.warn("Hidden state preprocessor already included, and will be not added twice.")
 
     def append_hidden_state(self, x):
-        # get latest cpg_state
-        cpg_state = self.policy.get_last_hidden_state()
-        return np.concatenate([x, cpg_state])
+        # get latest hidden state
+        hidden_state = self.policy.get_last_hidden_state()
+        return np.concatenate([x, hidden_state])
 
     def fit(self, dataset, **info):
         x, u, r, xn, absorbing, last = parse_dataset(dataset)

@@ -507,6 +507,8 @@ class IQ_SAC_BPTT_pI(DeepAC):
 
     def _post_load(self):
         self._update_optimizer_parameters(self.policy.parameters())
+        self._preprocessors = []
+        self._preprocessors.append(self.append_hidden_state)
 
     def sw_add_scalar(self, name, val, iter):
         if self._iter % self._logging_iter == 0:

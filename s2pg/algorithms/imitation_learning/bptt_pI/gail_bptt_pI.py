@@ -26,15 +26,12 @@ class GAIL_BPTT_pI(PPO_BPTT_pI):
 
     """
 
-    def __init__(self, discriminator_params,  ppo_standardizer=None, D_standardizer=None,
-                 train_D_n_th_epoch=3, n_epochs_discriminator=1, demonstrations=None, env_reward_frac=0.0,
-                 act_mask=None, use_next_states=False, use_noisy_targets=False, discrim_mode="fully_observable",
-                 discriminator_fit_params=None, loss=GailDiscriminatorLoss(), **kwargs):
+    def __init__(self, discriminator_params, train_D_n_th_epoch=3, n_epochs_discriminator=1, demonstrations=None,
+                 env_reward_frac=0.0, act_mask=None, use_next_states=False, use_noisy_targets=False,
+                 discrim_mode="fully_observable", discriminator_fit_params=None, loss=GailDiscriminatorLoss(),
+                 **kwargs):
 
         super(GAIL_BPTT_pI, self).__init__(**kwargs)
-
-        # standardizer
-        self._D_standardizer = D_standardizer
 
         # discriminator params
         self._discriminator_fit_params = (dict() if discriminator_fit_params is None
@@ -88,7 +85,6 @@ class GAIL_BPTT_pI(PPO_BPTT_pI):
             _discrim_state_mask='pickle',
             _use_next_state='pickle',
             _use_noisy_targets='pickle',
-            _D_standardizer='pickle',
             _train_D_n_th_epoch='pickle',
         )
 
@@ -119,10 +115,6 @@ class GAIL_BPTT_pI(PPO_BPTT_pI):
         obs = to_float_tensor(x_seq, self.policy.use_cuda)
         act = to_float_tensor(u, self.policy.use_cuda)
         prev_act_seq = to_float_tensor(prev_u_seq)
-
-        # update running mean and std
-        if self._standardizer:
-            self._standardizer.update_mean_std(obs)
 
         # create reward
         if self._env_reward_frac < 1.0:
@@ -185,10 +177,6 @@ class GAIL_BPTT_pI(PPO_BPTT_pI):
                 else:
                     input_states = np.concatenate([plcy_obs, demo_obs.astype(np.float32)])
                     inputs = (input_states,)
-
-                # update running mean if neccessary
-                if self._D_standardizer is not None:
-                    self._D_standardizer.update_mean_std(np.concatenate([plcy_obs, demo_obs.astype(np.float32)]))
 
                 # create label targets
                 if self._use_noisy_targets:

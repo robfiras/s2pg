@@ -447,7 +447,6 @@ class StatefulPolicyPPO_joint_prev_a(GaussianTorchPolicy):
         self._last_hidden_state = np.zeros(self._hidden_state_dim, dtype=np.float32)
         self._last_action = np.zeros(self._action_dim_actual, dtype=np.float32)
         self._init_hidden_state = init_hidden_state
-        self._last_cpg_state = None
         self._log_std_min = to_parameter(log_std_min)
         self._log_std_max = to_parameter(log_std_max)
         self.reset()
@@ -456,6 +455,11 @@ class StatefulPolicyPPO_joint_prev_a(GaussianTorchPolicy):
         self._add_save_attr(
             _action_dim_actual='primitive',
             _last_hidden_state='numpy',
+            _hidden_state_dim='numpy',
+            _init_hidden_state='numpy',
+            _last_action='numpy',
+            _log_std_min='primitive',
+            _log_std_max='primitive',
             deteriministic='primitive'
         )
 

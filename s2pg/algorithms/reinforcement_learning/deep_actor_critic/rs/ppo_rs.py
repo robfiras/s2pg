@@ -31,7 +31,7 @@ class PPO_RS(Agent):
                  n_epochs_policy, batch_size, eps_ppo, lam, hidden_state_dim,
                  ent_coeff=0.0, policy_state_mask=None, critic_state_mask=None,
                  new_state_update_tau=0.0, critic_fit_params=None, include_prev_a_in_V=False,
-                 standardizer=None, sw=None):
+                 sw=None):
         """
         Constructor.
 
@@ -64,7 +64,6 @@ class PPO_RS(Agent):
 
         self._V = Regressor(TorchApproximator, **critic_params)
 
-        self._standardizer = standardizer
         self._dim_env_state = mdp_info.observation_space.shape[0]
 
         if sw:
@@ -79,9 +78,10 @@ class PPO_RS(Agent):
         del self._save_attributes["_preprocessors"]
 
         # add the standardization preprocessor
-        self._preprocessors.append(StandardizationPreprocessor_ext(mdp_info))
+        self._standardizer = StandardizationPreprocessor_ext(mdp_info)
+        self._preprocessors.append(self._standardizer)
 
-        # add the preprocessor to append the cpg state to the environment state
+        # add the preprocessor to append the hidden state to the environment state
         self._preprocessors.append(self.append_hidden_state)
 
         self._hidden_state_dim = hidden_state_dim
@@ -118,19 +118,19 @@ class PPO_RS(Agent):
         return states[:, 0:self._dim_env_state], states[:, self._dim_env_state:]
 
     def add_preprocessor(self, preprocessor):
-        # for now disable the preprocessor to ensure that appending the cpg state is always done at last
+        # for now disable the preprocessor to ensure that appending the hidden state is always done at last
         raise AttributeError("This agent current does not support preprocessors.")
 
     def add_hidden_state_preprocessor(self):
-        if len(self._preprocessors) == 0:   # only the cpg preprocessor is allowed for now, which is why we can check the length
+        if len(self._preprocessors) == 0:   # only the hidden state preprocessor is allowed for now, which is why we can check the length
             self._preprocessors.append(self.append_hidden_state)
         else:
-            warnings.warn("CPG Preprocessor already included, and will be not added twice.")
+            warnings.warn("Hidden state preprocessor already included, and will be not added twice.")
 
     def append_hidden_state(self, x):
-        # get latest cpg_state
-        cpg_state = self.policy.get_last_hidden_state()
-        return np.concatenate([x, cpg_state])
+        # get latest hidden state
+        hidden_state = self.policy.get_last_hidden_state()
+        return np.concatenate([x, hidden_state])
 
     def fit(self, dataset, **info):
         x, u, r, xn, absorbing, last = parse_dataset(dataset)
@@ -147,10 +147,6 @@ class PPO_RS(Agent):
         obs_hidden_obs = to_float_tensor(x, self.policy.use_cuda)
         act = to_float_tensor(u, self.policy.use_cuda)
         prev_act = to_float_tensor(prev_u)
-
-        # update running mean and std
-        if self._standardizer:
-            self._standardizer.update_mean_std(obs)
 
         v_target, np_adv = self.compute_gae(self._V, x, xn, r, prev_u, u, absorbing, last, self.mdp_info.gamma, self._lambda())
         np_adv = (np_adv - np.mean(np_adv)) / (np.std(np_adv) + 1e-8)
@@ -192,25 +188,6 @@ class PPO_RS(Agent):
 
             # update hidden state in dataset
             if self._new_state_update_tau > 0.0:
-                # last_hidden_state = deepcopy(obs_hidden_obs[0, 0, -self._hidden_state_dim:]).view(1, 1, -1)
-                # new_obs = list()
-                # for obs_hidden_obs_i, prev_act_i, last_i in zip(obs_hidden_obs, prev_act, last):
-                #     obs_hidden_obs_i = torch.unsqueeze(obs_hidden_obs_i, dim=0)
-                #     prev_act_i = torch.unsqueeze(prev_act_i, dim=0)
-                #     obs_hidden_obs_i = torch.concat([obs_hidden_obs_i[:, :, :-self._hidden_state_dim], last_hidden_state], dim=2)
-                #     dist = self.policy.distribution_t(obs_hidden_obs_i, prev_act_i)
-                #     out_new = dist.sample().detach()
-                #     new_next_hidden = torch.squeeze(out_new)[-self._hidden_state_dim:]
-                #     new_obs.append(deepcopy(obs_hidden_obs_i))
-                #     if last_i:
-                #         last_hidden_state = torch.zeros((1, 1, self._hidden_state_dim), dtype=torch.float32)
-                #     else:
-                #         last_hidden_state = new_next_hidden.view(1, 1, -1)
-                #
-                # new_obs_hidden_obs = torch.concat(new_obs, dim=0)
-                # todo: the next hidden state need to be extend with zeros in the beginning
-                # obs_hidden_obs = (1 - self._new_state_update_tau) * obs_hidden_obs + \
-                #                  self._new_state_update_tau * new_obs_hidden_obs
 
                 dist = self.policy.distribution_t(obs_hidden_obs, prev_act)
                 out_new = dist.sample().detach()
@@ -219,7 +196,7 @@ class PPO_RS(Agent):
                 new_hidden = torch.concat([first_hidden_state, new_next_hidden[:-1]])
                 curr_hidden = obs_hidden_obs[:, 0, -self._hidden_state_dim:]
                 obs_hidden_obs[:, 0, -self._hidden_state_dim:] = (1 - self._new_state_update_tau) * curr_hidden \
-                                                                 + self._new_state_update_tau * new_hidden
+                                                                  + self._new_state_update_tau * new_hidden
 
     def _log_info(self, dataset, x, prev_u, v_target, old_pol_dist):
         if self._sw:
@@ -268,6 +245,9 @@ class PPO_RS(Agent):
     def _post_load(self):
         if self._optimizer is not None:
             update_optimizer_parameters(self._optimizer, list(self.policy.parameters()))
+        self._preprocessors = []
+        self._preprocessors.append(self._standardizer)
+        self._preprocessors.append(self.append_hidden_state)
 
     @staticmethod
     def get_prev_action(actions, lasts, absorbings):
@@ -325,3 +305,4 @@ class PPO_RS(Agent):
             else:
                 gen_adv[k] = r[k] + gamma * v_next[k] - v[k] + gamma * lam * gen_adv[k + 1]
         return gen_adv + v, gen_adv
+
