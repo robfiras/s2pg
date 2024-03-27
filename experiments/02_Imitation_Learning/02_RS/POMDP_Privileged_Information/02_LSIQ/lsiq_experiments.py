@@ -181,7 +181,7 @@ def experiment(env: str = "HumanoidTorque",
             logger_deter.log_numpy(Epoch=i, R_mean=R, J_mean=J, L=L, Time=time())
 
             # save agent if needed
-            agent_saver.save(core.agent, J)
+            agent_saver.save(core.agent, R)
 
     agent_saver.save_curr_best_agent()
     print("Finished.")

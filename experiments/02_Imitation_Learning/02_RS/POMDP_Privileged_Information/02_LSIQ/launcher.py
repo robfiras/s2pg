@@ -42,8 +42,8 @@ if __name__ == '__main__':
     use_prev_actions = [False]
     adapt_tau_on_experts = [False]
     alpha_confs = ((1.0, 3e-4), (1.0, 3e-5))
-    alpha_conf_hiddens = ((0.01, 3e-4))
-    lrs = ((3e-4, 1e-4))
+    alpha_conf_hiddens = ((0.01, 3e-4),)
+    lrs = ((3e-4, 1e-4),)
     gradient_pen_coeffs = [0.0]
     plcy_loss_modes = ["q_old_policy"]
     lossQ_types = ["sqil_like"]
