@@ -7,7 +7,6 @@ LOCAL = is_local()
 TEST = False
 USE_CUDA = False
 N_SEEDS = 25
-JOBLIB_PARALLEL_JOBS = 1
 
 
 launcher = Launcher(exp_name='ppo_rs_pomdp',

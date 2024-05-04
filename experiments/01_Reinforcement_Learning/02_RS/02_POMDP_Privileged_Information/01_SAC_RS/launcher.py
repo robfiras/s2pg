@@ -41,12 +41,11 @@ launcher.add_experiment(env__="AntPOMDP-v3",
                         init_alpha__=1.0,
                         lr_alpha__=0.0003,
                         init_alpha_hidden__=0.01,
-                        lr_alpha_hidden__=5e-6,
+                        lr_alpha_hidden__=1e-6,
                         new_state_update_tau__=1.0,
                         use_prev_action__=True,
-                        lr_critic__=0.0003,
+                        lr_critic__=0.0001,
                         **defaults)
-
 
 # --- HalfCheetah ---
 launcher.add_experiment(env__="HalfCheetahPOMDP-v3",
@@ -61,7 +60,6 @@ launcher.add_experiment(env__="HalfCheetahPOMDP-v3",
                         use_prev_action__=True,
                         lr_critic__=0.001,
                         **defaults)
-
 
 # --- Hopper ---
 launcher.add_experiment(env__="HopperPOMDP-v3",
@@ -84,11 +82,11 @@ launcher.add_experiment(env__="HumanoidPOMDP-v3",
                         num_hidden_layers__=1,
                         init_alpha__=1.0,
                         lr_alpha__=5e-06,
-                        init_alpha_hidden__=0.01,
+                        init_alpha_hidden__=0.1,
                         lr_alpha_hidden__=5e-06,
                         new_state_update_tau__=1.0,
                         use_prev_action__=True,
-                        lr_critic__=0.0003,
+                        lr_critic__=0.0001,
                         **defaults)
 
 # --- Walker2d ---

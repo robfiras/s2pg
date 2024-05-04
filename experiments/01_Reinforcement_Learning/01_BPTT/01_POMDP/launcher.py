@@ -7,7 +7,6 @@ LOCAL = is_local()
 TEST = False
 USE_CUDA = False
 N_SEEDS = 25
-JOBLIB_PARALLEL_JOBS = 1
 
 
 launcher = Launcher(exp_name='ppo_bptt_pomdp',
@@ -29,7 +28,6 @@ defaults = dict(n_epochs=100,
                 gamma=0.99,
                 n_epochs_eval=10,
                 std_0__=0.5,
-                truncation_length=32, 
                 obs_to_hide__="velocities")
 
 

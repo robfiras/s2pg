@@ -37,8 +37,8 @@ for env in envs:
     alpha_conf = (1.0, 5e-6) if "HumanoidPOMDP" in env else (1.0, 3e-4)
     init_alpha, lr_alpha = alpha_conf
     launcher.add_experiment(env__=env,
-                            init_alpha__=1.0,
-                            lr_alpha__=3e-4,
+                            init_alpha__=init_alpha,
+                            lr_alpha__=lr_alpha,
                             **defaults)
 
 launcher.run(LOCAL, TEST)

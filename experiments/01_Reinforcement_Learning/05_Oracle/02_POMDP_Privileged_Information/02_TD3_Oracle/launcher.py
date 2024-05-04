@@ -34,8 +34,8 @@ defaults = dict(n_epochs=200,
 
 envs = ["HalfCheetahPOMDP-v3", "HopperPOMDP-v3", "Walker2dPOMDP-v3", "AntPOMDP-v3", "HumanoidPOMDP-v3"]
 
+std = 0.1
 for env in envs:
-    std = 0.4 if "Humanoid" in env else 0.1
     launcher.add_experiment(env__=env, std__=std, **defaults)
 
 launcher.run(LOCAL, TEST)
