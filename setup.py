@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-requires_list = ["torchdiffeq", "mushroom_rl>=1.6.0", "tensorboard", "experiment_launcher"]
+requires_list = ["torchdiffeq", "mushroom_rl>=1.6.0", "tensorboard", "experiment_launcher", "loco-mujoco"]
 
 setup(name='s2pg',
       version='0.1',

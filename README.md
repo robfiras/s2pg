@@ -1,4 +1,5 @@
-# Stochastic Stateful Policy Gradients - S2PG
+
+![S2PG](img/logo.png)
 
 This is the official code base of the paper [Time-Efficient Reinforcement Learning with Stochastic Stateful Policies](https://arxiv.org/abs/2311.04082), which was presented at the eleventh International Conference on Learning Representations (ICLR 2024) in Vienna Austria.
 
@@ -13,7 +14,7 @@ stateful policies is Backpropagation Through Time (BPTT), which comes with
 significant drawbacks, such as slow training due to sequential gradient propagation and the occurrence of vanishing or exploding gradients. The gradient is often
 truncated to address these issues, resulting in a biased policy update. We present
 a novel approach for training stateful policies by decomposing the latter into a
-stochastic internal state kernel and a stateless policy, jointly optimized by following the stateful policy gradient. We introduce different versions of the stateful
+stochastic internal state kernel and a stateless policy, jointly optimized by following the **Stochastic Stateful Policy Gradient (S2PG)**. We introduce different versions of the stateful
 policy gradient theorem, enabling us to easily instantiate stateful variants of popular reinforcement learning and imitation learning algorithms.
 We evaluate our approach on complex continuous control tasks, e.g. humanoid locomotion, and demonstrate that our gradient estimator scales effectively
 with task complexity while offering a faster and simpler alternative to BPTT.
@@ -37,8 +38,13 @@ cd s2pg
 pip install -e .
 ```
 
-The imitation learning environments will be available soon in the next release of [LocoMuJoCo](https://github.com/robfiras/loco-mujoco)
+To use the imitation learning environments, you need to download the datasets for [LocoMuJoCo](https://github.com/robfiras/loco-mujoco).
+While LocoMuJoCo will be installed for you during the installation above, you still need to download the datasets.
+To do so, just run this pre-installed command:
 
+```shell
+loco-mujoco-download
+```
 ---
 
 ## Experiments
