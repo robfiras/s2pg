@@ -38,6 +38,9 @@ cd s2pg
 pip install -e .
 ```
 
+The RL experiments are based on OpenAI-Gym v3, which still uses `mujoco_py`. Hence, Mujoco has to be installed manually
+to run the RL experiments (see [here](https://github.com/openai/mujoco-py?tab=readme-ov-file#install-mujoco)). 
+
 To use the imitation learning environments, you need to download the datasets for [LocoMuJoCo](https://github.com/robfiras/loco-mujoco).
 While LocoMuJoCo will be installed for you during the installation above, you still need to download the datasets.
 To do so, just run this pre-installed command:
