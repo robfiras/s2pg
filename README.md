@@ -3,6 +3,8 @@
 
 This is the official code base of the paper [Time-Efficient Reinforcement Learning with Stochastic Stateful Policies](https://arxiv.org/abs/2311.04082), which was presented at the eleventh International Conference on Learning Representations (ICLR 2024) in Vienna Austria.
 
+![humanoid](https://github.com/robfiras/s2pg/assets/69359729/fec5ddd2-e50c-4b3b-af83-d27ad7e31f96)
+
 ---
 
 ## Method
